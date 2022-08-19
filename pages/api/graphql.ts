@@ -1,10 +1,11 @@
+import { NextRequest, NextResponse } from "next/server";
 import { ApolloServer } from "apollo-server-micro";
 import { Neo4jGraphQL } from "@neo4j/graphql";
-import typeDefs from "../../apollo/typeDefs";
+import typeDefs from "../../apollo/type-defs";
 import driver from "../../library/neo4j";
 import resolvers from "../../apollo/resolvers";
 
-export default async function handler(req, res) {
+export default async function handler(req: any, res: any) {
   res.setHeader("Access-Control-Allow-Credentials", "true");
   res.setHeader(
     "Access-Control-Allow-Origin",
