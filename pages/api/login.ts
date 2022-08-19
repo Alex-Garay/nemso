@@ -3,7 +3,12 @@ import { NextApiRequest, NextApiResponse } from "next";
 import { sessionOptions } from "../../library/session";
 export default withIronSessionApiRoute(loginRoute, sessionOptions);
 
-async function loginRoute(req: NextApiRequest, res: NextApiResponse) {
+type User = {
+  id: number;
+  admin: boolean;
+};
+
+async function loginRoute(req: any, res: NextApiResponse) {
   // We use the login route to declare the data we want to store inside the cookie
   // get user from database then:
   try {
