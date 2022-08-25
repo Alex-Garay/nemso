@@ -1,7 +1,8 @@
 import type { NextPage } from "next";
 import Head from "next/head";
 import { Button } from "@material-tailwind/react";
-import UserController from "../controller/UserController";
+import UserController from "../hooks/UserControllerOld";
+
 const Home: NextPage = () => {
   const controller: UserController = new UserController("nasrine", "password");
   console.log(controller.exists());

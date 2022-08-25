@@ -1,5 +1,6 @@
-import { useMutation, useQuery, gql } from "@apollo/client";
-import client from "../library/graphql-client";
+import { useMutation, useQuery, gql, useLazyQuery } from "@apollo/client";
+import client from "../library/GraphqlClient";
+import React from "react";
 class UserController {
   private username: string;
   private password: string;
@@ -20,11 +21,9 @@ class UserController {
         }
       }
     `;
-    const { loading, error, data } = useQuery(FIND_EXISTING_USER);
+    const [validateExisting, { called, loading, data }] =
+      useLazyQuery(FIND_EXISTING_USER);
     // Boolean on whether the user has been found
-    if (error) {
-      console.log(error);
-    }
     if (!loading && data.users.length === 0) {
       return false;
     } else if (!loading && data.users.length > 0) {
@@ -56,7 +55,7 @@ class UserController {
       if (error) {
         return false;
       } else {
-        return true;
+        return data;
       }
     } else {
       return false;
