@@ -1,11 +1,51 @@
 import { useState } from "react";
 import { useLazyQuery, gql } from "@apollo/client";
+import { useRouter } from "next/router";
 import { NextPage } from "next";
 import NavigationBar from "../../components/navigation/NavigationBar";
-const LoginPage: NextPage = () => {
+
+import { withIronSessionSsr } from "iron-session/next";
+import { sessionOptions } from "../../library/Session";
+import { InferGetServerSidePropsType } from "next";
+
+export const getServerSideProps = withIronSessionSsr(async function ({
+  req,
+  res,
+}) {
+  const user = req.session.user;
+
+  if (user === undefined) {
+    return {
+      props: {
+        isLoggedIn: false,
+      },
+    };
+  }
+
+  return {
+    props: {
+      isLoggedIn: true,
+      user: req.session.user,
+    },
+  };
+},
+sessionOptions);
+
+const LoginPage = ({
+  user,
+  isLoggedIn,
+}: InferGetServerSidePropsType<typeof getServerSideProps>) => {
   // State management of username and password
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+
+  // NextJs router to manage routes
+  const router = useRouter();
+
+  // user is logged in, redirect them away from login page.
+  if (isLoggedIn) {
+    router.push("/");
+  }
 
   // Graphql Client query that matches username and password - Need to implement hashed bycrypt passwords
   const GET_USER = gql`
@@ -35,6 +75,7 @@ const LoginPage: NextPage = () => {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(body),
           });
+          router.push("/");
         } catch (error) {
           console.error("An unexpected error happened:", error);
         }

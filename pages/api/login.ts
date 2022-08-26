@@ -6,11 +6,11 @@ export default withIronSessionApiRoute(loginRoute, sessionOptions);
 async function loginRoute(req: any, res: NextApiResponse) {
   // We use the login route to declare the data we want to store inside the cookie
   // get user from database then:
-  console.log("TOUCHING LOGIN PAGE");
-
+  const { id, username } = req.body;
+  console.log(id, username);
   req.session.user = {
-    id: 230,
-    username: "George",
+    id: id,
+    username: username,
   };
   await req.session.save();
   res.send({ ok: true });

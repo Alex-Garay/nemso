@@ -9,6 +9,7 @@ export type User = {
 
 async function userRoute(req: NextApiRequest, res: NextApiResponse) {
   // We use the user route to get current logged in user data
+  console.log(req.session);
   // console.log(req.session);
   if (req.session.user) {
     // in a real world application you might read the user id from the session and then do a database request
