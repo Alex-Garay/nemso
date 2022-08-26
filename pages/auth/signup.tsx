@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { NextPage } from "next";
-import { Button, Input, Typography } from "@material-tailwind/react";
 import { useMutation, gql, useLazyQuery } from "@apollo/client";
+import NavigationBar from "../../components/navigation/NavigationBar";
 const SignUpPage: NextPage = () => {
   // State nanagement for our inputs
   const [username, setUsername] = useState("");
@@ -32,38 +32,17 @@ const SignUpPage: NextPage = () => {
   if (data && data.users.length !== 0) {
     console.log("FOUND AN EXISTING USER");
   }
-  return (
-    <div className="flex justify-center items-center flex-col h-screen bg-gray-100">
-      <Typography variant="h3" color="blue-gray">
-        Welcome to Nemso
-      </Typography>
-      <form
-        onSubmit={(event) => {
-          event.preventDefault();
-          validateExisting({
-            variables: { username: username },
-          });
-        }}
-        className="w-64"
-      >
-        <Input
-          label="username"
-          type="text"
-          onChange={(e) => setUsername(e.target.value)}
-        />
 
-        <Input
-          label="password"
-          type="password"
-          onChange={(e) => setPassword(e.target.value)}
-        />
-        {data && data.users.length !== 0 ? (
-          <Typography variant="small" color="red">
-            User Already Exists
-          </Typography>
-        ) : null}
-        <Button type="submit">Signup</Button>
-      </form>
+  // {
+  //   data && data.users.length !== 0 ? (
+  //     <Typography variant="small" color="red">
+  //       User Already Exists
+  //     </Typography>
+  //   ) : null;
+  // }
+  return (
+    <div>
+      <NavigationBar />
     </div>
   );
 };

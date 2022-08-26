@@ -1,11 +1,7 @@
 import type { NextPage } from "next";
 import Head from "next/head";
-import { Button } from "@material-tailwind/react";
-import UserController from "../hooks/UserControllerOld";
-
+import NavigationBar from "../components/navigation/NavigationBar";
 const Home: NextPage = () => {
-  const controller: UserController = new UserController("nasrine", "password");
-  console.log(controller.exists());
   return (
     <div>
       <Head>
@@ -15,8 +11,8 @@ const Home: NextPage = () => {
       </Head>
 
       <main>
+        <NavigationBar />
         <h1 className="text-3xl font-bold underline">Hello world!</h1>
-        <Button>Button</Button>
       </main>
 
       <footer></footer>

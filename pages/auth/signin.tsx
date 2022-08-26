@@ -1,105 +1,109 @@
 import { useState } from "react";
+import { useLazyQuery, gql } from "@apollo/client";
 import { NextPage } from "next";
-import Link from "next/link";
-import {
-  Button,
-  Input,
-  Typography,
-  Card,
-  CardHeader,
-  CardBody,
-  CardFooter,
-  Checkbox,
-} from "@material-tailwind/react";
+import NavigationBar from "../../components/navigation/NavigationBar";
 const LoginPage: NextPage = () => {
+  // State management of username and password
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+
+  // Graphql Client query that matches username and password - Need to implement hashed bycrypt passwords
+  const GET_USER = gql`
+    query getUser($username: String!, $password: String!) {
+      users(where: { username: $username, password: $password }) {
+        id
+        username
+        password
+      }
+    }
+  `;
+  // When matching credentials are matching, we will request a cookie from the /login/ api endpoint.
+  const [validateExisting, { called, loading, data }] = useLazyQuery(GET_USER, {
+    onCompleted: async (data) => {
+      // Validate that credentials are valid.
+      if (data && data.users.length === 1) {
+        console.log("Completed: Valid Credentials");
+        // Data we want inside of our cookie.
+        const body = {
+          id: data.users[0].id,
+          username: username,
+        };
+        // Send our data we want inside our cookie and receive back a cookie.
+        try {
+          await fetch("/api/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body),
+          });
+        } catch (error) {
+          console.error("An unexpected error happened:", error);
+        }
+      }
+    },
+  });
+
+  // Handles submit
+  const handleSubmit = async (event: any) => {
+    // Prevent page from refreshing when clicking button
+    event.preventDefault();
+    // resets the password
+    setPassword("");
+    // Variables are needed to prevent a bug - SEE: https://github.com/apollographql/apollo-client/issues/5912
+    validateExisting({
+      variables: {
+        username: username,
+        password: password,
+      },
+    });
+  };
   return (
-    <div className="flex flex-col h-screen justify-center items-center">
-      {/* <form
-        onSubmit={async function handleSubmit(event) {
-          event.preventDefault();
-
-          const body = {
-            username: username,
-            password: password,
-          };
-
-          try {
-            await fetch("/api/login", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(body),
-            });
-          } catch (error) {
-            console.error("An unexpected error happened:", error);
-          }
-        }}
-        className="card flex-shrink-0 w-full max-w-sm shadow-2xl bg-base-100"
-      >
-        <Typography variant="h5" color="blue-gray">
-          Welcome back, signin!
-        </Typography>
-        <Input
-          label="username"
-          type="text"
-          onChange={(e) => setUsername(e.target.value)}
-        />
-
-        <Input
-          label="password"
-          type="password"
-          onChange={(e) => setPassword(e.target.value)}
-        />
-        <Button type="submit">Login</Button>
-      </form> */}
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          console.log(username, password);
-        }}
-      >
-        <Card className="w-96">
-          <div className="text-center">
-            <Typography variant="h6" color="blue-gray">
-              Welcome back, signin!
-            </Typography>
-          </div>
-          <CardBody className="flex flex-col gap-4">
-            <Input
-              label="Email"
-              size="lg"
-              onChange={(e) => setUsername(e.target.value)}
-            />
-            <Input
-              label="Password"
-              size="lg"
-              onChange={(e) => setPassword(e.target.value)}
-              type="password"
-            />
-            <div className="-ml-2.5">
-              <Checkbox label="Remember Me" />
-            </div>
-          </CardBody>
-          <CardFooter className="pt-0">
-            <Button variant="gradient" fullWidth color="indigo" type="submit">
-              Sign In
-            </Button>
-            <Typography variant="small" className="mt-6 flex justify-center">
-              Don't have an account?
-              <Typography
-                as="a"
-                href="#signup"
-                variant="small"
-                color="blue"
-                className="ml-1 font-bold"
+    <div>
+      <NavigationBar />
+      <div className="grid justify-items-center items-center h-screen -mt-36">
+        <div className="card w-96 bg-base-200 shadow-xl ">
+          <div className="card-body items-center text-center">
+            <h2 className="card-title">Hello, Welcome Back!</h2>
+            <form
+              onSubmit={(event) => {
+                handleSubmit(event);
+              }}
+            >
+              <input
+                required={true}
+                type="text"
+                placeholder="@username"
+                className="input input-bordered input-primary w-full max-w-xs mb-4"
+                // On change of our input, it stored our value using our setUsername state
+                onChange={(event) => {
+                  setUsername(event.target.value);
+                }}
+                value={username}
+              />
+              <input
+                required={true}
+                type="password"
+                placeholder="password"
+                className="input input-bordered input-primary w-full max-w-xs mb-4"
+                // On change of our input, it stored our value using our setPassword state
+                onChange={(event) => {
+                  setPassword(event.target.value);
+                }}
+                value={password}
+              />
+              {data && data.users.length === 0 ? (
+                <h1 className="text-error mb-4">Invalid Credentials</h1>
+              ) : null}
+              <button
+                className={`btn btn-primary btn-wide btn-square ${
+                  loading ? "btn-square loading" : null
+                }`}
               >
-                Sign up
-              </Typography>
-            </Typography>
-          </CardFooter>
-        </Card>
-      </form>
+                {loading ? "loading" : "Login"}
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
