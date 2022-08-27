@@ -40,7 +40,7 @@ const SignUpPage: NextPage = ({
   // State nanagement for our inputs
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-
+  const [foundExistingUser, setFoundExistingUser] = useState(false);
   // Graphql query to find if the username already exists in the database
   const FIND_EXISTING_USER = gql`
     query Users($username: String!) {
@@ -58,25 +58,79 @@ const SignUpPage: NextPage = ({
     FIND_EXISTING_USER,
     {
       onCompleted: (data) => {
+        console.log(data);
         console.log("Completed");
+        if (data && data.users.length !== 0) {
+          setFoundExistingUser(true);
+        }
       },
     }
   );
-  // Checks the returned data to check if a user exists
-  if (data && data.users.length !== 0) {
-    console.log("FOUND AN EXISTING USER");
-  }
 
-  // {
-  //   data && data.users.length !== 0 ? (
-  //     <Typography variant="small" color="red">
-  //       User Already Exists
-  //     </Typography>
-  //   ) : null;
-  // }
+  const handleSubmit = (event) => {
+    event.preventDefault();
+    validateExisting({
+      fetchPolicy: "no-cache",
+      variables: {
+        username: username,
+      },
+    });
+    setFoundExistingUser(false);
+  };
+
   return (
     <div>
-      <NavigationBar />
+      <NavigationBar
+        authentication={{
+          isLoggedIn: isLoggedIn,
+          user: user,
+        }}
+      />
+      <div className="grid justify-items-center items-center h-screen -mt-36">
+        <div className="card w-96 bg-base-200 shadow-xl ">
+          <div className="card-body items-center text-center">
+            <h2 className="card-title">Hello, Welcome to Nemso!</h2>
+            <form
+              onSubmit={(event) => {
+                handleSubmit(event);
+              }}
+            >
+              <input
+                required={true}
+                type="text"
+                placeholder="@username"
+                className="input input-bordered input-primary w-full max-w-xs mb-4"
+                // On change of our input, it stored our value using our setUsername state
+                onChange={(event) => {
+                  setUsername(event.target.value);
+                }}
+                value={username}
+              />
+              <input
+                required={true}
+                type="password"
+                placeholder="password"
+                className="input input-bordered input-primary w-full max-w-xs mb-4"
+                // On change of our input, it stored our value using our setPassword state
+                onChange={(event) => {
+                  setPassword(event.target.value);
+                }}
+                value={password}
+              />
+              {foundExistingUser ? (
+                <h1 className="text-error mb-3">User already exists!</h1>
+              ) : null}
+              <button
+                className={`btn btn-primary btn-wide btn-square ${
+                  loading ? "btn-square loading" : null
+                }`}
+              >
+                {loading ? "loading" : "Signup"}
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

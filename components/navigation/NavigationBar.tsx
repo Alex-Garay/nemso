@@ -1,18 +1,26 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
-
+import Router, { useRouter } from "next/router";
 const NavigationBar = ({ authentication }) => {
   const [loggedIn, setLoggedIn] = useState(
     authentication.isLoggedIn ? true : false
   );
-  const LoggedInMenu = () => {
+  const router = useRouter();
+
+  const loggedInMenu = () => {
     return (
-      <li className="text-white">
+      <li className="text-white active:bg-primary-focus">
         <Link href="/">
-          <a>Home</a>
+          <a className={`mr-1 ${router.pathname == "/" ? "active" : ""}`}>
+            Home
+          </a>
         </Link>
-        <Link href="/account?">
-          <a>Account</a>
+        <Link href="/account">
+          <a
+            className={`mr-1 ${router.pathname == "/account" ? "active" : ""}`}
+          >
+            Account
+          </a>
         </Link>
         <Link href="#">
           <a onClick={handleLogout}>Logout</a>
@@ -25,13 +33,27 @@ const NavigationBar = ({ authentication }) => {
     return (
       <li className="text-white">
         <Link href="/">
-          <a>Home</a>
+          <a className={`mr-1 ${router.pathname == "/" ? "active" : ""}`}>
+            Home
+          </a>
         </Link>
-        <Link href="/auth/signin?">
-          <a>Login</a>
+        <Link href="/auth/signin">
+          <a
+            className={`mr-1 ${
+              router.pathname == "/auth/signin" ? "active" : ""
+            }`}
+          >
+            Login
+          </a>
         </Link>
-        <Link href="/auth/signup?">
-          <a>Signup</a>
+        <Link href="/auth/signup">
+          <a
+            className={`mr-1 ${
+              router.pathname == "/auth/signup" ? "active" : ""
+            }`}
+          >
+            Signup
+          </a>
         </Link>
       </li>
     );
@@ -52,7 +74,7 @@ const NavigationBar = ({ authentication }) => {
       </div>
       <div className="flex-none navbar-end">
         <ul className="menu menu-horizontal p-0">
-          {!loggedIn ? loggedOutMenu() : LoggedInMenu()}
+          {!loggedIn ? loggedOutMenu() : loggedInMenu()}
         </ul>
       </div>
     </div>
