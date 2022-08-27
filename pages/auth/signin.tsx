@@ -1,17 +1,15 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLazyQuery, gql } from "@apollo/client";
 import { useRouter } from "next/router";
 import { NextPage } from "next";
 import NavigationBar from "../../components/navigation/NavigationBar";
 
+// ServersideProps imports
 import { withIronSessionSsr } from "iron-session/next";
 import { sessionOptions } from "../../library/Session";
 import { InferGetServerSidePropsType } from "next";
 
-export const getServerSideProps = withIronSessionSsr(async function ({
-  req,
-  res,
-}) {
+export const getServerSideProps = withIronSessionSsr(function ({ req, res }) {
   const user = req.session.user;
 
   if (user === undefined) {
@@ -28,10 +26,9 @@ export const getServerSideProps = withIronSessionSsr(async function ({
       user: req.session.user,
     },
   };
-},
-sessionOptions);
+}, sessionOptions);
 
-const LoginPage = ({
+const LoginPage: NextPage = ({
   user,
   isLoggedIn,
 }: InferGetServerSidePropsType<typeof getServerSideProps>) => {
@@ -43,9 +40,11 @@ const LoginPage = ({
   const router = useRouter();
 
   // user is logged in, redirect them away from login page.
-  if (isLoggedIn) {
-    router.push("/");
-  }
+  useEffect(() => {
+    if (isLoggedIn) {
+      router.push("/");
+    }
+  });
 
   // Graphql Client query that matches username and password - Need to implement hashed bycrypt passwords
   const GET_USER = gql`
@@ -99,7 +98,12 @@ const LoginPage = ({
   };
   return (
     <div>
-      <NavigationBar />
+      <NavigationBar
+        authentication={{
+          isLoggedIn: isLoggedIn,
+          user: user,
+        }}
+      />
       <div className="grid justify-items-center items-center h-screen -mt-36">
         <div className="card w-96 bg-base-200 shadow-xl ">
           <div className="card-body items-center text-center">

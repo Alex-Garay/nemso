@@ -1,45 +1,48 @@
 import Link from "next/link";
-import { withIronSessionSsr } from "iron-session/next";
-import { sessionOptions } from "../../library/Session";
-import { InferGetServerSidePropsType } from "next";
-export const getServerSideProps = withIronSessionSsr(async function ({
-  req,
-  res,
-}) {
-  const user = req.session.user;
+import { useEffect, useState } from "react";
 
-  if (user === undefined) {
-    res.setHeader("location", "/login");
-    res.statusCode = 302;
-    res.end();
-    return {
-      props: {
-        user: { isLoggedIn: false, login: "", avatarUrl: "" },
-      },
-    };
-  }
-
-  return {
-    props: { user: req.session.user },
-  };
-},
-sessionOptions);
-const NavigationBar = ({
-  user,
-}: InferGetServerSidePropsType<typeof getServerSideProps>) => {
-  const logged = async () => {
-    try {
-      const response = await fetch("http://localhost:3000/api/user", {
-        method: "GET",
-      });
-      // console.log(response.body);
-    } catch (error) {
-      // console.log(error);
-    }
+const NavigationBar = ({ authentication }) => {
+  const [loggedIn, setLoggedIn] = useState(
+    authentication.isLoggedIn ? true : false
+  );
+  const LoggedInMenu = () => {
+    return (
+      <li className="text-white">
+        <Link href="/">
+          <a>Home</a>
+        </Link>
+        <Link href="/account?">
+          <a>Account</a>
+        </Link>
+        <Link href="#">
+          <a onClick={handleLogout}>Logout</a>
+        </Link>
+      </li>
+    );
   };
 
-  logged();
-  // console.log(user);
+  const loggedOutMenu = () => {
+    return (
+      <li className="text-white">
+        <Link href="/">
+          <a>Home</a>
+        </Link>
+        <Link href="/auth/signin?">
+          <a>Login</a>
+        </Link>
+        <Link href="/auth/signup?">
+          <a>Signup</a>
+        </Link>
+      </li>
+    );
+  };
+
+  const handleLogout = () => {
+    // /api/logout enpoint destroys our session (nemso-auth cookie)
+    fetch("/api/logout");
+    // Rerender our navigation menu
+    setLoggedIn(false);
+  };
   return (
     <div className="navbar bg-base-200">
       <div className="flex-1 navbar-start">
@@ -49,17 +52,7 @@ const NavigationBar = ({
       </div>
       <div className="flex-none navbar-end">
         <ul className="menu menu-horizontal p-0">
-          <li className="text-white">
-            <Link href="/">
-              <a>Home</a>
-            </Link>
-            <Link href="/auth/signin?">
-              <a>Login</a>
-            </Link>
-            <Link href="/auth/signup?">
-              <a>Signup</a>
-            </Link>
-          </li>
+          {!loggedIn ? loggedOutMenu() : LoggedInMenu()}
         </ul>
       </div>
     </div>

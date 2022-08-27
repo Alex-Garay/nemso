@@ -7,7 +7,6 @@ async function loginRoute(req: any, res: NextApiResponse) {
   // We use the login route to declare the data we want to store inside the cookie
   // get user from database then:
   const { id, username } = req.body;
-  console.log(id, username);
   req.session.user = {
     id: id,
     username: username,

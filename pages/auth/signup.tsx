@@ -1,8 +1,42 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { NextPage } from "next";
 import { useMutation, gql, useLazyQuery } from "@apollo/client";
 import NavigationBar from "../../components/navigation/NavigationBar";
-const SignUpPage: NextPage = () => {
+import Router, { useRouter } from "next/router";
+
+// ServersideProps imports
+import { withIronSessionSsr } from "iron-session/next";
+import { sessionOptions } from "../../library/Session";
+import { InferGetServerSidePropsType } from "next";
+
+export const getServerSideProps = withIronSessionSsr(function ({ req, res }) {
+  const user = req.session.user;
+
+  if (user === undefined) {
+    return {
+      props: {
+        isLoggedIn: false,
+      },
+    };
+  }
+
+  return {
+    props: {
+      isLoggedIn: true,
+      user: req.session.user,
+    },
+  };
+}, sessionOptions);
+
+const SignUpPage: NextPage = ({
+  user,
+  isLoggedIn,
+}: InferGetServerSidePropsType<typeof getServerSideProps>) => {
+  useEffect(() => {
+    if (isLoggedIn) {
+      Router.push("/");
+    }
+  });
   // State nanagement for our inputs
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
