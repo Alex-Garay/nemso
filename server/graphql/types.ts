@@ -11,10 +11,11 @@ export const typeDefs = gql`
     password: String!
   }
   type AuthenticationUser {
+    id: ID
     username: String!
   }
   type Authentication {
-    token: String!
+    success: Boolean!
     user: AuthenticationUser
   }
   type Mutation {
