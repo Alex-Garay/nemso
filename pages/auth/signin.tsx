@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useLazyQuery, gql } from "@apollo/client";
+import { useMutation, gql } from "@apollo/client";
 import { useRouter } from "next/router";
 import { NextPage } from "next";
 import Head from "next/head";
@@ -39,7 +39,7 @@ const LoginPage: NextPage = ({
   // State management of username and password
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-
+  const [invalidCredentials, setInvalidCredentials] = useState(false);
   // NextJs router to manage routes
   const router = useRouter();
 
@@ -50,55 +50,61 @@ const LoginPage: NextPage = ({
     }
   });
 
-  // Graphql Client query that matches username and password - Need to implement hashed bycrypt passwords
-  const GET_USER = gql`
-    query getUser($username: String!, $password: String!) {
-      users(where: { username: $username, password: $password }) {
-        id
-        username
-        password
+  const LOGIN_USER = gql`
+    mutation SignInMutation($username: String!, $password: String!) {
+      SignIn(input: { username: $username, password: $password }) {
+        success
+        user {
+          id
+          username
+        }
       }
     }
   `;
-  // When matching credentials are matching, we will request a cookie from the /login/ api endpoint.
-  const [validateExisting, { called, loading, data }] = useLazyQuery(GET_USER, {
-    onCompleted: async (data) => {
-      // Validate that credentials are valid.
-      if (data && data.users.length === 1) {
-        console.log("Completed: Valid Credentials");
-        // Data we want inside of our cookie.
-        const body = {
-          id: data.users[0].id,
-          username: username,
-        };
-        // Send our data we want inside our cookie and receive back a cookie.
-        try {
-          await fetch("/api/login", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(body),
-          });
-          router.push("/");
-        } catch (error) {
-          console.error("An unexpected error happened:", error);
+  const [loginUserMutation, { data, loading, error }] = useMutation(
+    LOGIN_USER,
+    {
+      onCompleted: async (data) => {
+        console.log(data);
+        // We've received a success true from our mutation indicating the user has been successfully created
+        if (data.SignIn.success) {
+          const { id, username } = data.SignIn.user;
+          const body = {
+            id,
+            username,
+          };
+          // Calling /api/login creates a session cookie for us with our id and username
+          try {
+            await fetch("/api/login", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(body),
+            });
+            // navigates us home
+            router.push("/");
+          } catch (error) {
+            console.error("An unexpected error happened:", error);
+          }
+        } else {
+          setInvalidCredentials(true);
         }
-      }
-    },
-  });
+      },
+    }
+  );
 
   // Handles submit
   const handleSubmit = async (event: any) => {
     // Prevent page from refreshing when clicking button
     event.preventDefault();
-    // resets the password
-    setPassword("");
-    // Variables are needed to prevent a bug - SEE: https://github.com/apollographql/apollo-client/issues/5912
-    validateExisting({
+    loginUserMutation({
       variables: {
-        username: username,
-        password: password,
+        username,
+        password,
       },
     });
+    // resets the password
+    setPassword("");
+    setInvalidCredentials(false);
   };
   return (
     <div>
@@ -145,7 +151,7 @@ const LoginPage: NextPage = ({
                   }}
                   value={password}
                 />
-                {data && data.users.length === 0 ? (
+                {invalidCredentials ? (
                   <h1 className="text-error mb-4">Invalid Credentials</h1>
                 ) : null}
                 <button
