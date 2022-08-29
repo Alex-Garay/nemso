@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import Router, { useRouter } from "next/router";
-const NavigationBar = ({ authentication }) => {
+import type { Authentication } from "../../types/authentication";
+const NavigationBar = ({ authentication }: Authentication) => {
   const [loggedIn, setLoggedIn] = useState(
     authentication.isLoggedIn ? true : false
   );
@@ -9,7 +10,7 @@ const NavigationBar = ({ authentication }) => {
 
   const loggedInMenu = () => {
     return (
-      <li className="text-white active:bg-primary-focus">
+      <li className="text-white">
         <Link href="/">
           <a className={`mr-1 ${router.pathname == "/" ? "active" : ""}`}>
             Home

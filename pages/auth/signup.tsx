@@ -2,77 +2,99 @@ import React, { useState, useEffect } from "react";
 import { NextPage } from "next";
 import { useMutation, gql, useLazyQuery } from "@apollo/client";
 import NavigationBar from "../../components/navigation/NavigationBar";
-import Router, { useRouter } from "next/router";
-
+import { useRouter } from "next/router";
+import Head from "next/head";
 // ServersideProps imports
-import { withIronSessionSsr } from "iron-session/next";
-import { sessionOptions } from "../../library/Session";
 import { InferGetServerSidePropsType } from "next";
+import { withSessionSsr } from "../../library/Session";
 
-export const getServerSideProps = withIronSessionSsr(function ({ req, res }) {
-  const user = req.session.user;
+export const getServerSideProps = withSessionSsr(
+  // 👇️ this ignores any ts errors on the next line
+  // @ts-ignore
+  async function getServerSideProps({ req }) {
+    const user = req.session.user;
 
-  if (user === undefined) {
+    if (user === undefined) {
+      return {
+        props: {
+          isLoggedIn: false,
+        },
+      };
+    }
+
     return {
       props: {
-        isLoggedIn: false,
+        isLoggedIn: true,
+        user: req.session.user,
       },
     };
   }
-
-  return {
-    props: {
-      isLoggedIn: true,
-      user: req.session.user,
-    },
-  };
-}, sessionOptions);
+);
 
 const SignUpPage: NextPage = ({
   user,
   isLoggedIn,
 }: InferGetServerSidePropsType<typeof getServerSideProps>) => {
+  const router = useRouter();
+  // Checks our session from our serversideprops if we are logged in then navigates home if logged in
   useEffect(() => {
     if (isLoggedIn) {
-      Router.push("/");
+      router.push("/");
     }
   });
+
   // State nanagement for our inputs
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [foundExistingUser, setFoundExistingUser] = useState(false);
-  // Graphql query to find if the username already exists in the database
-  const FIND_EXISTING_USER = gql`
-    query Users($username: String!) {
-      users(where: { username: $username }) {
-        id
-        username
-        password
+
+  const CREATE_USER = gql`
+    mutation SignUpMutation($username: String!, $password: String!) {
+      SignUp(input: { username: $username, password: $password }) {
+        success
+        user {
+          id
+          username
+        }
       }
     }
   `;
-  // Using regular useQuery throws an error about hook rule violations, HAVE to use useLazyQuery:
-  // useLazyQuery will run everytime username or password state changes.
-  // Refer to: https://www.apollographql.com/docs/react/api/react/hooks/#uselazyquery
-  const [validateExisting, { called, loading, data }] = useLazyQuery(
-    FIND_EXISTING_USER,
+  const [createUserMutation, { data, loading, error }] = useMutation(
+    CREATE_USER,
     {
-      onCompleted: (data) => {
-        console.log(data);
-        console.log("Completed");
-        if (data && data.users.length !== 0) {
+      onCompleted: async (data) => {
+        // We've received a success true from our mutation indicating the user has been successfully created
+        if (data.SignUp.success) {
+          const { id, username } = data.SignUp.user;
+          const body = {
+            id,
+            username,
+          };
+          // Calling /api/login creates a session cookie for us with our id and username
+          try {
+            await fetch("/api/login", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(body),
+            });
+            // navigates us home
+            router.push("/");
+          } catch (error) {
+            console.error("An unexpected error happened:", error);
+          }
+        } else {
           setFoundExistingUser(true);
         }
       },
     }
   );
-
-  const handleSubmit = (event) => {
+  const handleSubmit = (event: any) => {
     event.preventDefault();
-    validateExisting({
-      fetchPolicy: "no-cache",
+    // Calling our create user mutation with our input from state
+    createUserMutation({
       variables: {
         username: username,
+        password: password,
       },
     });
     setFoundExistingUser(false);
@@ -80,57 +102,64 @@ const SignUpPage: NextPage = ({
 
   return (
     <div>
+      <Head>
+        <title>nemso - signup</title>
+        <meta name="description" content="nemso fitness marketplace" />
+        <link rel="icon" href="/favicon.ico" />
+      </Head>
       <NavigationBar
         authentication={{
           isLoggedIn: isLoggedIn,
           user: user,
         }}
       />
-      <div className="grid justify-items-center items-center h-screen -mt-36">
-        <div className="card w-96 bg-base-200 shadow-xl ">
-          <div className="card-body items-center text-center">
-            <h2 className="card-title">Hello, Welcome to Nemso!</h2>
-            <form
-              onSubmit={(event) => {
-                handleSubmit(event);
-              }}
-            >
-              <input
-                required={true}
-                type="text"
-                placeholder="@username"
-                className="input input-bordered input-primary w-full max-w-xs mb-4"
-                // On change of our input, it stored our value using our setUsername state
-                onChange={(event) => {
-                  setUsername(event.target.value);
+      <main>
+        <div className="grid justify-items-center items-center h-screen -mt-36">
+          <div className="card w-96 bg-base-200 shadow-xl ">
+            <div className="card-body items-center text-center">
+              <h2 className="card-title">Hello, Welcome to Nemso!</h2>
+              <form
+                onSubmit={(event) => {
+                  handleSubmit(event);
                 }}
-                value={username}
-              />
-              <input
-                required={true}
-                type="password"
-                placeholder="password"
-                className="input input-bordered input-primary w-full max-w-xs mb-4"
-                // On change of our input, it stored our value using our setPassword state
-                onChange={(event) => {
-                  setPassword(event.target.value);
-                }}
-                value={password}
-              />
-              {foundExistingUser ? (
-                <h1 className="text-error mb-3">User already exists!</h1>
-              ) : null}
-              <button
-                className={`btn btn-primary btn-wide btn-square ${
-                  loading ? "btn-square loading" : null
-                }`}
               >
-                {loading ? "loading" : "Signup"}
-              </button>
-            </form>
+                <input
+                  required={true}
+                  type="text"
+                  placeholder="@username"
+                  className="input input-bordered input-primary w-full max-w-xs mb-4"
+                  // On change of our input, it stored our value using our setUsername state
+                  onChange={(event) => {
+                    setUsername(event.target.value);
+                  }}
+                  value={username}
+                />
+                <input
+                  required={true}
+                  type="password"
+                  placeholder="password"
+                  className="input input-bordered input-primary w-full max-w-xs mb-4"
+                  // On change of our input, it stored our value using our setPassword state
+                  onChange={(event) => {
+                    setPassword(event.target.value);
+                  }}
+                  value={password}
+                />
+                {foundExistingUser ? (
+                  <h1 className="text-error mb-3">User already exists!</h1>
+                ) : null}
+                <button
+                  className={`btn btn-primary btn-wide btn-square ${
+                    loading ? "btn-square loading" : null
+                  }`}
+                >
+                  {loading ? "loading" : "Signup"}
+                </button>
+              </form>
+            </div>
           </div>
         </div>
-      </div>
+      </main>
     </div>
   );
 };

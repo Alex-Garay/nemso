@@ -2,31 +2,35 @@ import { useState, useEffect } from "react";
 import { useLazyQuery, gql } from "@apollo/client";
 import { useRouter } from "next/router";
 import { NextPage } from "next";
+import Head from "next/head";
 import NavigationBar from "../../components/navigation/NavigationBar";
 
 // ServersideProps imports
-import { withIronSessionSsr } from "iron-session/next";
-import { sessionOptions } from "../../library/Session";
 import { InferGetServerSidePropsType } from "next";
+import { withSessionSsr } from "../../library/Session";
 
-export const getServerSideProps = withIronSessionSsr(function ({ req, res }) {
-  const user = req.session.user;
+export const getServerSideProps = withSessionSsr(
+  // 👇️ this ignores any ts errors on the next line
+  // @ts-ignore
+  async function getServerSideProps({ req }) {
+    const user = req.session.user;
 
-  if (user === undefined) {
+    if (user === undefined) {
+      return {
+        props: {
+          isLoggedIn: false,
+        },
+      };
+    }
+
     return {
       props: {
-        isLoggedIn: false,
+        isLoggedIn: true,
+        user: req.session.user,
       },
     };
   }
-
-  return {
-    props: {
-      isLoggedIn: true,
-      user: req.session.user,
-    },
-  };
-}, sessionOptions);
+);
 
 const LoginPage: NextPage = ({
   user,
@@ -98,57 +102,64 @@ const LoginPage: NextPage = ({
   };
   return (
     <div>
+      <Head>
+        <title>nemso - signin</title>
+        <meta name="description" content="nemso fitness marketplace" />
+        <link rel="icon" href="/favicon.ico" />
+      </Head>
       <NavigationBar
         authentication={{
           isLoggedIn: isLoggedIn,
           user: user,
         }}
       />
-      <div className="grid justify-items-center items-center h-screen -mt-36">
-        <div className="card w-96 bg-base-200 shadow-xl ">
-          <div className="card-body items-center text-center">
-            <h2 className="card-title">Hello, Welcome Back!</h2>
-            <form
-              onSubmit={(event) => {
-                handleSubmit(event);
-              }}
-            >
-              <input
-                required={true}
-                type="text"
-                placeholder="@username"
-                className="input input-bordered input-primary w-full max-w-xs mb-4"
-                // On change of our input, it stored our value using our setUsername state
-                onChange={(event) => {
-                  setUsername(event.target.value);
+      <main>
+        <div className="grid justify-items-center items-center h-screen -mt-36">
+          <div className="card w-96 bg-base-200 shadow-xl ">
+            <div className="card-body items-center text-center">
+              <h2 className="card-title">Hello, Welcome Back!</h2>
+              <form
+                onSubmit={(event) => {
+                  handleSubmit(event);
                 }}
-                value={username}
-              />
-              <input
-                required={true}
-                type="password"
-                placeholder="password"
-                className="input input-bordered input-primary w-full max-w-xs mb-4"
-                // On change of our input, it stored our value using our setPassword state
-                onChange={(event) => {
-                  setPassword(event.target.value);
-                }}
-                value={password}
-              />
-              {data && data.users.length === 0 ? (
-                <h1 className="text-error mb-4">Invalid Credentials</h1>
-              ) : null}
-              <button
-                className={`btn btn-primary btn-wide btn-square ${
-                  loading ? "btn-square loading" : null
-                }`}
               >
-                {loading ? "loading" : "Login"}
-              </button>
-            </form>
+                <input
+                  required={true}
+                  type="text"
+                  placeholder="@username"
+                  className="input input-bordered input-primary w-full max-w-xs mb-4"
+                  // On change of our input, it stored our value using our setUsername state
+                  onChange={(event) => {
+                    setUsername(event.target.value);
+                  }}
+                  value={username}
+                />
+                <input
+                  required={true}
+                  type="password"
+                  placeholder="password"
+                  className="input input-bordered input-primary w-full max-w-xs mb-4"
+                  // On change of our input, it stored our value using our setPassword state
+                  onChange={(event) => {
+                    setPassword(event.target.value);
+                  }}
+                  value={password}
+                />
+                {data && data.users.length === 0 ? (
+                  <h1 className="text-error mb-4">Invalid Credentials</h1>
+                ) : null}
+                <button
+                  className={`btn btn-primary btn-wide btn-square ${
+                    loading ? "btn-square loading" : null
+                  }`}
+                >
+                  {loading ? "loading" : "Login"}
+                </button>
+              </form>
+            </div>
           </div>
         </div>
-      </div>
+      </main>
     </div>
   );
 };

@@ -1,28 +1,32 @@
 import NavigationBar from "../../components/navigation/NavigationBar";
 
 // ServersideProps imports
-import { withIronSessionSsr } from "iron-session/next";
-import { sessionOptions } from "../../library/Session";
 import { InferGetServerSidePropsType } from "next";
+import { withSessionSsr } from "../../library/Session";
 
-export const getServerSideProps = withIronSessionSsr(function ({ req, res }) {
-  const user = req.session.user;
+export const getServerSideProps = withSessionSsr(
+  // 👇️ this ignores any ts errors on the next line
+  // @ts-ignore
+  async function getServerSideProps({ req }) {
+    const user = req.session.user;
 
-  if (user === undefined) {
+    if (user === undefined) {
+      return {
+        props: {
+          isLoggedIn: false,
+        },
+      };
+    }
+
     return {
       props: {
-        isLoggedIn: false,
+        isLoggedIn: true,
+        user: req.session.user,
       },
     };
   }
+);
 
-  return {
-    props: {
-      isLoggedIn: true,
-      user: req.session.user,
-    },
-  };
-}, sessionOptions);
 const Account = ({
   user,
   isLoggedIn,
