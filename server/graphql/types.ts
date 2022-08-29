@@ -22,6 +22,6 @@ export const typeDefs = gql`
     SignUp(input: UserInput): Authentication
   }
   type Mutation {
-    LogIn(input: UserInput): Authentication
+    SignIn(input: UserInput): Authentication
   }
 `;
